@@ -7,6 +7,14 @@ import PIXI, {
 import { CardDeck } from '../components/CardDeck';
 import { sound } from '@pixi/sound';
 
+interface ButtonOptions {
+    fontSize?: number;
+    textColor?: number;
+    bgColor?: number;
+    bgAlpha?: number;
+    padding?: number;
+    radius?: number;
+}
 
 export class AppController {
     private deck!: CardDeck;
@@ -63,16 +71,9 @@ export class AppController {
     private createButton(
         labelText: string,
         onClick: () => void,
-        options?: {
-            fontSize?: number;
-            textColor?: number;
-            bgColor?: number;
-            bgAlpha?: number;
-            padding?: number;
-            radius?: number;
-        }
+        options?: ButtonOptions
     ): PIXI.Container {
-        const opts = {
+        const opts:Required<ButtonOptions> = {
             fontSize: 32,
             textColor: 0xffffff,
             bgColor: 0x333333,
@@ -84,10 +85,13 @@ export class AppController {
 
         const container = new PIXI.Container();
 
-        const label = new PIXI.Text(labelText, {
-            fontFamily: 'Arial',
-            fontSize:  opts.fontSize,
-            fill:      opts.textColor
+        const label = new PIXI.Text( {
+            text: labelText,
+            style:{
+                fontFamily: 'Arial',
+                fontSize:  opts.fontSize,
+                fill:      opts.textColor
+            }
         });
 
         const width = label.width  + opts.padding * 2;
@@ -120,14 +124,16 @@ export class AppController {
         const spacing = 20;
 
         // reveal
-        this.revealBtn = this.createButton('Reveal', () => {
+        this.revealBtn = this.createButton('Reveal', async () => {
             if (this.deck.currentIndex < this.deck.cards.length) {
-                this.deck.revealNext();
+                this.enableBtn(false, this.revealBtn);
                 sound.play('flip');
+                await this.deck.revealNext();
+                this.enableBtn(true, this.revealBtn);
 
                 // after each opening, check if it`s the end
                 if (this.deck.currentIndex >= this.deck.cards.length) {
-                    this.enableRestart(true);
+                    this.enableBtn(true, this.restartBtn);
                 }
             }
         }, { fontSize: revealFontSize, bgColor: revealBgColor });
@@ -137,10 +143,10 @@ export class AppController {
             this.app.stage.removeChild(this.deck);
             this.createDeck();
             sound.play('button');
-            this.enableRestart(false); // set disable after resetting
+            this.enableBtn(false, this.restartBtn); // set disable after resetting
         }, { fontSize: restartFontSize, textColor: restartTextColor, bgColor: restartBgColor });
 
-        this.enableRestart(false);
+        this.enableBtn(false, this.restartBtn);
 
         const centerX = this.app.screen.width / 2;
 
@@ -153,18 +159,21 @@ export class AppController {
         this.app.stage.addChild(this.revealBtn, this.restartBtn);
     }
 
-    //set state for restart button
-    private enableRestart(enabled: boolean) {
-        this.restartBtn.eventMode = enabled ? 'static' : 'none';
-        this.restartBtn.cursor    = enabled ? 'pointer' : 'not-allowed';
-        this.restartBtn.alpha     = enabled ? 1 : 0.5;
+    //set state for button
+    private enableBtn(enabled: boolean, button: PIXI.Container) {
+        button.eventMode = enabled ? 'static' : 'none';
+        button.cursor    = enabled ? 'pointer' : 'not-allowed';
+        button.alpha     = enabled ? 1 : 0.5;
     }
 
     private showPreloader(message: string) {
-        this.loadingText = new Text(message, {
-            fontFamily: 'Arial',
-            fontSize:   28,
-            fill:       0xffffff
+        this.loadingText = new PIXI.Text( {
+            text: message,
+            style:{
+                fontFamily: 'Arial',
+                fontSize:   28,
+                fill:       0xffffff
+            }
         });
         this.loadingText.anchor.set(0.5);
         this.loadingText.x = this.app.screen.width / 2;
@@ -173,10 +182,13 @@ export class AppController {
     }
 
     private showError(message: string) {
-        const errorText = new Text(message, {
-            fontFamily: 'Arial',
-            fontSize:   28,
-            fill:       0xff0000
+        const errorText = new Text( {
+            text: message,
+            style:{
+                fontFamily: 'Arial',
+                fontSize:   28,
+                fill:       0xff0000
+            }
         });
         errorText.anchor.set(0.5);
         errorText.x = this.app.screen.width / 2;

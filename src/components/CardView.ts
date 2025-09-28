@@ -10,10 +10,17 @@ export class CardView extends PIXI.Sprite {
         this.scale.set(0.5);
     }
 
-    public reveal(onComplete?: () => void) {
-        if (this.revealed) return;
+    /**
+     * flips the card to show the front texture and fades it out
+     * returns a Promise that resolves when animation is complete
+     */
+    public reveal(onComplete?: () => void): Promise<void> {
+        if (this.revealed) {
+            onComplete?.();
+            return Promise.resolve();
+        }
         this.revealed = true;
-
+        return new Promise<void>((resolve) => {
         const ticker = PIXI.Ticker.shared;
         const startScaleX = this.scale.x;
         let flipping = true;
@@ -39,8 +46,9 @@ export class CardView extends PIXI.Sprite {
                     this.visible = false; //hide sprite
                     ticker.remove(tick); //stop ticker for this card
                     onComplete?.();
+                    resolve(); // animation finished
                 }
             }
         }.bind(this));
-    }
+    })}
 }

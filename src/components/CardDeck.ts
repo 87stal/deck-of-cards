@@ -30,9 +30,9 @@ export class CardDeck extends PIXI.Container {
         this.cards.reverse();
     }
 
-    public revealNext() {
+    public async revealNext() {
         if (this.currentIndex >= this.cards.length) return;
-        this.cards[this.currentIndex].reveal();
+        await this.cards[this.currentIndex].reveal();
         this.currentIndex++;
     }
 }
