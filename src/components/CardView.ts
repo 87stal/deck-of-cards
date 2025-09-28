@@ -45,7 +45,6 @@ export class CardView extends PIXI.Sprite {
                 if (this.alpha <= 0) {
                     this.visible = false; //hide sprite
                     ticker.remove(tick); //stop ticker for this card
-                    onComplete?.();
                     resolve(); // animation finished
                 }
             }

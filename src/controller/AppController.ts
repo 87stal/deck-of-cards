@@ -16,6 +16,12 @@ interface ButtonOptions {
     radius?: number;
 }
 
+// constants for button styles
+const BUTTON_STYLES = {
+    reveal: { fontSize: 36, bgColor: 0x17416a },
+    restart: { fontSize: 28, textColor: 0xffcc00, bgColor: 0x597592 }
+};
+
 export class AppController {
     private deck!: CardDeck;
     private loadingText!: Text;
@@ -113,57 +119,62 @@ export class AppController {
     }
 
     private createButtons() {
-        const revealFontSize = 36;
-        const revealBgColor = 0x17416a;
+        this.revealBtn = this.createButton('Reveal', () => this.handleReveal(), BUTTON_STYLES.reveal);
+        this.restartBtn = this.createButton('Restart', () => this.handleRestart(), BUTTON_STYLES.restart);
 
-        const restartFontSize = 28;
-        const restartTextColor = 0xffcc00;
-        const restartBgColor = 0x597592;
+        this.setButtonsState({ reveal: true, restart: false });
 
-        const baseY = this.app.screen.height - 100;
+        this.app.stage.addChild(this.revealBtn, this.restartBtn);
+        this.layoutUI();
+    }
+
+    // handle reveal click
+    private async handleReveal() {
+        if (this.deck.currentIndex >= this.deck.cards.length) return;
+
+        this.enableBtn(false, this.revealBtn); // disable while animation
+        sound.play('flip');
+        await this.deck.revealNext();
+        this.enableBtn(true, this.revealBtn);
+
+        if (this.deck.currentIndex >= this.deck.cards.length) {
+            this.setButtonsState({ reveal: false, restart: true });
+        }
+    }
+
+    // handle restart click
+    private handleRestart() {
+        this.app.stage.removeChild(this.deck);
+        this.createDeck();
+        sound.play('button');
+        this.setButtonsState({ reveal: true, restart: false });
+    }
+
+    private layoutUI() {
+        if (!this.deck || !this.revealBtn || !this.restartBtn) return;
+
         const spacing = 20;
-
-        // reveal
-        this.revealBtn = this.createButton('Reveal', async () => {
-            if (this.deck.currentIndex < this.deck.cards.length) {
-                this.enableBtn(false, this.revealBtn);
-                sound.play('flip');
-                await this.deck.revealNext();
-                this.enableBtn(true, this.revealBtn);
-
-                // after each opening, check if it`s the end
-                if (this.deck.currentIndex >= this.deck.cards.length) {
-                    this.enableBtn(true, this.restartBtn);
-                }
-            }
-        }, { fontSize: revealFontSize, bgColor: revealBgColor });
-
-        // restart
-        this.restartBtn = this.createButton('Restart', () => {
-            this.app.stage.removeChild(this.deck);
-            this.createDeck();
-            sound.play('button');
-            this.enableBtn(false, this.restartBtn); // set disable after resetting
-        }, { fontSize: restartFontSize, textColor: restartTextColor, bgColor: restartBgColor });
-
-        this.enableBtn(false, this.restartBtn);
-
-        const centerX = this.app.screen.width / 2;
+        const deckBounds = this.deck.getBounds();
+        const baseY = deckBounds.y + deckBounds.height + spacing;
+        const centerX = deckBounds.x + deckBounds.width / 2;
 
         this.revealBtn.x = centerX - (this.revealBtn.width + spacing + this.restartBtn.width) / 2;
         this.revealBtn.y = baseY;
 
         this.restartBtn.x = this.revealBtn.x + this.revealBtn.width + spacing;
         this.restartBtn.y = baseY + (this.revealBtn.height - this.restartBtn.height) / 2;
-
-        this.app.stage.addChild(this.revealBtn, this.restartBtn);
     }
 
     //set state for button
     private enableBtn(enabled: boolean, button: PIXI.Container) {
         button.eventMode = enabled ? 'static' : 'none';
-        button.cursor    = enabled ? 'pointer' : 'not-allowed';
-        button.alpha     = enabled ? 1 : 0.5;
+        button.cursor = enabled ? 'pointer' : 'not-allowed';
+        button.alpha = enabled ? 1 : 0.5;
+    }
+
+    private setButtonsState(options: { reveal?: boolean; restart?: boolean }) {
+        if (options.reveal !== undefined) this.enableBtn(options.reveal, this.revealBtn);
+        if (options.restart !== undefined) this.enableBtn(options.restart, this.restartBtn);
     }
 
     private showPreloader(message: string) {
