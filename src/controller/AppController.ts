@@ -132,10 +132,10 @@ export class AppController {
     private async handleReveal() {
         if (this.deck.currentIndex >= this.deck.cards.length) return;
 
-        this.enableBtn(false, this.revealBtn); // disable while animation
+        this.setBtnEnabled(false, this.revealBtn); // disable while animation
         sound.play('flip');
         await this.deck.revealNext();
-        this.enableBtn(true, this.revealBtn);
+        this.setBtnEnabled(true, this.revealBtn);
 
         if (this.deck.currentIndex >= this.deck.cards.length) {
             this.setButtonsState({ reveal: false, restart: true });
@@ -148,6 +148,18 @@ export class AppController {
         this.createDeck();
         sound.play('button');
         this.setButtonsState({ reveal: true, restart: false });
+    }
+
+    //set state for button
+    private setBtnEnabled(enabled: boolean, button: PIXI.Container) {
+        button.eventMode = enabled ? 'static' : 'none';
+        button.cursor = enabled ? 'pointer' : 'not-allowed';
+        button.alpha = enabled ? 1 : 0.5;
+    }
+
+    private setButtonsState(options: { reveal?: boolean; restart?: boolean }) {
+        if (options.reveal !== undefined) this.setBtnEnabled(options.reveal, this.revealBtn);
+        if (options.restart !== undefined) this.setBtnEnabled(options.restart, this.restartBtn);
     }
 
     private layoutUI() {
@@ -163,18 +175,6 @@ export class AppController {
 
         this.restartBtn.x = this.revealBtn.x + this.revealBtn.width + spacing;
         this.restartBtn.y = baseY + (this.revealBtn.height - this.restartBtn.height) / 2;
-    }
-
-    //set state for button
-    private enableBtn(enabled: boolean, button: PIXI.Container) {
-        button.eventMode = enabled ? 'static' : 'none';
-        button.cursor = enabled ? 'pointer' : 'not-allowed';
-        button.alpha = enabled ? 1 : 0.5;
-    }
-
-    private setButtonsState(options: { reveal?: boolean; restart?: boolean }) {
-        if (options.reveal !== undefined) this.enableBtn(options.reveal, this.revealBtn);
-        if (options.restart !== undefined) this.enableBtn(options.restart, this.restartBtn);
     }
 
     private showPreloader(message: string) {

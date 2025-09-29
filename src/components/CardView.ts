@@ -14,9 +14,8 @@ export class CardView extends PIXI.Sprite {
      * flips the card to show the front texture and fades it out
      * returns a Promise that resolves when animation is complete
      */
-    public reveal(onComplete?: () => void): Promise<void> {
+    public reveal(): Promise<void> {
         if (this.revealed) {
-            onComplete?.();
             return Promise.resolve();
         }
         this.revealed = true;
